@@ -1,0 +1,111 @@
+version: "3"
+services:
+  db:
+    restart: always
+    image: postgres:14-alpine
+    shm_size: 256mb
+    networks:
+      - internal_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+    environment:
+      - "POSTGRES_USER=mastodon"
+      - "POSTGRES_PASSWORD=postgres"
+      - "POSTGRES_DB=mastodon_acctest"
+
+  setup-init:
+    image: tootsuite/mastodon:${MASTODON_VERSION:-latest}
+    depends_on:
+      - db
+    restart: 'no' # on-failure?
+    env_file: .env.acctest
+    command: bash -c "bundle exec rake db:migrate;rails r /acctest-script"
+    networks:
+      - internal_network
+    configs:
+      - acctest-script
+
+  redis:
+    restart: always
+    image: redis:7-alpine
+    networks:
+      - internal_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+
+  web:
+    image: tootsuite/mastodon:${MASTODON_VERSION:-latest}
+    restart: always
+    env_file: .env.acctest
+    # this modifies hosts to allow for easier localhost usage
+    command: bash -c "rm -f /mastodon/tmp/pids/server.pid;sed -i 's/^end$$/  config.hosts.clear\\nend/' ./config/initializers/1_hosts.rb;bundle exec rails s -p 3000"
+    #debug: command: bash -c "rm -f /mastodon/tmp/pids/server.pid;sed -i 's/^end$$/  config.hosts.clear\\nend/' ./config/initializers/1_hosts.rb;sleep 2073600"
+    networks:
+      - internal_network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:3000/health || exit 1']
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # es:
+      #   condition: service_healthy
+      setup-init:
+        condition: service_completed_successfully
+
+  https-proxy:
+    image: fsouza/docker-ssl-proxy
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - "443:443/tcp"
+    environment:
+      - DOMAIN=localhost
+      - TARGET_PORT=3000
+      - TARGET_HOST=web
+      - SSL_PORT=443
+    networks:
+      - external_network
+      - internal_network
+
+  streaming:
+    image: tootsuite/mastodon:${MASTODON_VERSION:-latest}
+    restart: always
+    env_file: .env.acctest
+    command: node ./streaming
+    networks:
+      - external_network
+      - internal_network
+    healthcheck:
+      # prettier-ignore
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1']
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      - db
+      - redis
+
+  sidekiq:
+    image: tootsuite/mastodon:${MASTODON_VERSION:-latest}
+    restart: always
+    env_file: .env.acctest
+    command: bundle exec sidekiq
+    depends_on:
+      - db
+      - redis
+    networks:
+      - external_network
+      - internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep '[s]idekiq\ 6' || false"]
+
+configs:
+  acctest-script:
+    file: ./acctest.rb
+
+networks:
+  external_network:
+  internal_network:
+    internal: true

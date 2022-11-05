@@ -1,0 +1,1 @@
+terraform import mastodon_follow.follow @username
