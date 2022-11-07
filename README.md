@@ -1,3 +1,5 @@
+[![Tests](https://github.com/paultyng/terraform-provider-mastodon/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/paultyng/terraform-provider-mastodon/actions/workflows/test.yml)
+
 # Mastodon Terraform Provider
 
 ## Documentation
