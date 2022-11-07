@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccFollowResource(t *testing.T) {
+func TestAccFollowResource_local(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		IsUnitTest:               true,
 		PreCheck:                 func() { testAccPreCheck(t) },

@@ -35,3 +35,7 @@ provider "mastodon" {
 - `password` (String, Sensitive) The password of the user.
 - `server` (String) The server to connect to.
 - `username` (String) The user with which to login.
+
+### Optional
+
+- `allow_insecure` (Boolean) Allow invalid certificates on the Mastodon server.

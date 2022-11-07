@@ -35,6 +35,7 @@ type MastodonProviderModel struct {
 	ClientSecret types.String `tfsdk:"client_secret"`
 	Username     types.String `tfsdk:"username"`
 	Password     types.String `tfsdk:"password"`
+	Insecure     types.Bool   `tfsdk:"allow_insecure"`
 }
 
 func (p *MastodonProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -72,11 +73,12 @@ func (p *MastodonProvider) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Di
 				Type:                types.StringType,
 				Sensitive:           true,
 			},
-			// "allow_insecure": {
-			// 	MarkdownDescription: "",
-			// 	Optional:            true,
-			// 	Type:                types.BoolType,
-			// },
+
+			"allow_insecure": {
+				MarkdownDescription: "Allow invalid certificates on the Mastodon server.",
+				Optional:            true,
+				Type:                types.BoolType,
+			},
 		},
 	}, nil
 }
@@ -96,8 +98,7 @@ func (p *MastodonProvider) Configure(ctx context.Context, req provider.Configure
 		ClientSecret: data.ClientSecret.ValueString(),
 	})
 
-	// TODO: fill from model
-	insecure := true
+	insecure := data.Insecure.ValueBool()
 
 	client.Client.Transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

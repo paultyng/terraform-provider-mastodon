@@ -9,7 +9,8 @@ import (
 
 const providerConfig = `
 provider "mastodon" {
-	server = "https://localhost"
+	server         = "https://localhost"
+	allow_insecure = true
 
 	client_id     = "terraform-acctest-terraform-acctest-terrafo"
 	client_secret = "terraform-acctest-terraform-acctest-terrafo"
@@ -32,3 +33,17 @@ func testAccPreCheck(t *testing.T) {
 	// about the appropriate environment variables being set are common to see in a pre-check
 	// function.
 }
+
+// func importStep(name string, ignore ...string) resource.TestStep {
+// 	step := resource.TestStep{
+// 		ResourceName:      name,
+// 		ImportState:       true,
+// 		ImportStateVerify: true,
+// 	}
+
+// 	if len(ignore) > 0 {
+// 		step.ImportStateVerifyIgnore = ignore
+// 	}
+
+// 	return step
+// }
