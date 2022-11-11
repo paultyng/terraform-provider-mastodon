@@ -1,0 +1,1 @@
+terraform import mastodon_domain_block.domain_block nsfw.social

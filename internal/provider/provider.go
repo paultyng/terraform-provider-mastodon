@@ -130,6 +130,7 @@ func (p *MastodonProvider) Configure(ctx context.Context, req provider.Configure
 func (p *MastodonProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewFollowResource,
+		newDomainBlockResource,
 	}
 }
 
